@@ -8,11 +8,32 @@ import json
 import time
 import os
 import sys
+import logging
+import logging_class
 import glob
 import pandas as pd
 from tabulate import tabulate
 import config
 from datetime import datetime
+
+if config.logging_level=="DEBUG":
+    level=logging.DEBUG
+elif config.logging_level=="INFO":
+    level=logging.INFO
+elif config.logging_level=="ERROR":
+    level=logging.ERROR
+
+# create logger with 'spam_application'
+logger = logging.getLogger("merakiBackupAndRestore")
+logger.setLevel(level)
+
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+ch.setFormatter(logging_class.CustomFormatter())
+
+logger.addHandler(ch)
 
 def print_tabulate(data):
     df = pd.DataFrame(data)
@@ -55,7 +76,7 @@ if __name__ == "__main__":
             with open(f'{backup_path}/api_version.json', 'w') as fp:
                 json.dump(api_version, fp)
                 fp.close()
-            backup_operations = backupFunctions.merakiBackup(dir=backup_path, org=org, networks=nets, dashboard=dashboard)
+            backup_operations = backupFunctions.merakiBackup(dir=backup_path, org=org, networks=nets, dashboard=dashboard, logger=logger)
             backup_operations_df = pd.DataFrame(backup_operations)
             print_tabulate(backup_operations_df)
             backup_operations_df.to_csv(f'{backup_path}/backup_operations.csv')
@@ -89,7 +110,7 @@ if __name__ == "__main__":
         if proceed=='Y':
             restore_nets = [net for net in nets if net['name'] in definitive_set]
             print(restore_nets)
-            restore_operations = restoreFunctions.merakiRestore(org=org['id'], dir=restore_path,nets=restore_nets,dashboard=dashboard)
+            restore_operations = restoreFunctions.merakiRestore(org=org['id'], dir=restore_path,nets=restore_nets,dashboard=dashboard, logger=logger)
             restore_operations_df = pd.DataFrame(restore_operations)
             #print_tabulate(restore_operations_df)
             restore_operations_df.to_csv(f'{restore_path}/restore_operations.csv')
@@ -102,5 +123,3 @@ if __name__ == "__main__":
     else:
         print("Invalid selection!")
         sys.exit()
-
-
