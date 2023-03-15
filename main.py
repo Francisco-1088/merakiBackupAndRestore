@@ -40,12 +40,28 @@ def print_tabulate(data):
     print(tabulate(df, headers='keys', tablefmt='fancy_grid'))
 
 def read_orgs(dashboard, operation):
-    orgs = dashboard.organizations.getOrganizations()
-    print("Your API Key has access to the following organizations: ")
-    print_tabulate(orgs)
-    choice = int(input(f"Which organization do you want to perform a {operation} on? (Enter the table row number): "))
-    org = orgs[choice]
-    print(f"Working on organization {org['name']} - {org['id']}.")
+    organizations = dashboard.organizations.getOrganizations()
+    if config.org_number_filter!=['']:
+        orgs = [org for org in organizations if org['id'] in config.org_number_filter]
+        print("Your API Key has access to the following organizations (filtered by config.org_number_filter): ")
+        print_tabulate(orgs)
+        choice = int(input(f"Which organization do you want to perform a {operation} on? (Enter the table row number): "))
+        org = orgs[choice]
+        print(f"Working on organization {org['name']} - {org['id']}.")
+    elif config.org_name_filter != '':
+        orgs = [org for org in organizations if config.org_name_filter in org['name']]
+        print("Your API Key has access to the following organizations (filtered by config.org_name_filter): ")
+        print_tabulate(orgs)
+        choice = int(input(f"Which organization do you want to perform a {operation} on? (Enter the table row number): "))
+        org = orgs[choice]
+        print(f"Working on organization {org['name']} - {org['id']}.")
+    else:
+        orgs = organizations
+        print("Your API Key has access to the following organizations: ")
+        print_tabulate(orgs)
+        choice = int(input(f"Which organization do you want to perform a {operation} on? (Enter the table row number): "))
+        org = orgs[choice]
+        print(f"Working on organization {org['name']} - {org['id']}.")
     return org
 
 def read_nets(dashboard, operation, org_id, tag):
@@ -112,7 +128,7 @@ if __name__ == "__main__":
             print(restore_nets)
             restore_operations = restoreFunctions.merakiRestore(org=org['id'], dir=restore_path,nets=restore_nets,dashboard=dashboard, logger=logger)
             restore_operations_df = pd.DataFrame(restore_operations)
-            #print_tabulate(restore_operations_df)
+            print_tabulate(restore_operations_df)
             restore_operations_df.to_csv(f'{restore_path}/restore_operations.csv')
         elif proceed=='N':
             print("Stopping restore!")
@@ -123,3 +139,5 @@ if __name__ == "__main__":
     else:
         print("Invalid selection!")
         sys.exit()
+
+
