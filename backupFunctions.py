@@ -3,31 +3,8 @@ import json
 import meraki
 import requests
 import shutil
-import time
-import logging
-import logging_class
-import config
 
-if config.logging_level=="DEBUG":
-    level=logging.DEBUG
-elif config.logging_level=="INFO":
-    level=logging.INFO
-elif config.logging_level=="ERROR":
-    level=logging.ERROR
-
-# create logger with 'spam_application'
-logger = logging.getLogger("merakiBackupAndRestore")
-logger.setLevel(level)
-
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-ch.setFormatter(logging_class.CustomFormatter())
-
-logger.addHandler(ch)
-
-def merakiBackup(dir, org, networks, dashboard):
+def merakiBackup(dir, org, networks, dashboard, logger):
     """
     Wrapper function for backup operations. Will iterate across the list of networks and perform applicable
     backup operations, and return a list of dictionaries of operations with their status.
@@ -39,116 +16,116 @@ def merakiBackup(dir, org, networks, dashboard):
     operations = []
     # Backup Org Settings
     logger.info("Backing up organization settings...")
-    operations.append(backupOrganizationPolicyObjects(org=org, dir=dir, dashboard=dashboard))
-    operations.append(backupOrganizationMxIpsecVpn(org=org, dir=dir, dashboard=dashboard))
-    operations.append(backupOrganizationMxVpnFirewall(org=org, dir=dir, dashboard=dashboard))
+    operations.append(backupOrganizationPolicyObjects(org=org, dir=dir, dashboard=dashboard, logger=logger))
+    operations.append(backupOrganizationMxIpsecVpn(org=org, dir=dir, dashboard=dashboard, logger=logger))
+    operations.append(backupOrganizationMxVpnFirewall(org=org, dir=dir, dashboard=dashboard, logger=logger))
     for net in networks:
         # Backup MX Settings
         logger.info(f"Backing up settings for network {net['name']}...")
         if 'appliance' in net['productTypes']:
             logger.info("Backing up MX appliance settings...")
-            settings, mx_settings_operation = backupMxSettings(net=net, dir=dir, dashboard=dashboard)
+            settings, mx_settings_operation = backupMxSettings(net=net, dir=dir, dashboard=dashboard, logger=logger)
             operations.append(mx_settings_operation)
             logger.info("Backing up MX Warm Spare settings...")
-            operations.append(backupMxWarmSpare(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMxWarmSpare(net=net, dir=dir, dashboard=dashboard, logger=logger))
             if settings != []:
                 if settings['deploymentMode']=='routed':
                     logger.info("Backing up MX VLAN settings...")
-                    operations.append(backupMxVlans(net=net, dir=dir, dashboard=dashboard))
+                    operations.append(backupMxVlans(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MX Firewall settings...")
-            operations.append(backupMxFirewall(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMxFirewall(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MX Security settings...")
-            operations.append(backupMxSecurity(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMxSecurity(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MX Content Filtering settings...")
-            operations.append(backupMxContentFiltering(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMxContentFiltering(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MX Shaping settings...")
-            operations.append(backupMxShaping(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMxShaping(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MX AutoVPN settings...")
-            vpn_config, vpn_operation = backupMxVpnConfig(net=net, dir=dir, dashboard=dashboard)
+            vpn_config, vpn_operation = backupMxVpnConfig(net=net, dir=dir, dashboard=dashboard, logger=logger)
             operations.append(vpn_operation)
             if settings != []:
                 if settings['deploymentMode']=='routed':
                     logger.info("Backing up MX Static Routes settings...")
-                    operations.append(backupMxStaticRouting(net=net, dir=dir, dashboard=dashboard))
-            operations.append(backupMxSdWanSettings(net=net, dir=dir, dashboard=dashboard))
+                    operations.append(backupMxStaticRouting(net=net, dir=dir, dashboard=dashboard, logger=logger))
+            operations.append(backupMxSdWanSettings(net=net, dir=dir, dashboard=dashboard, logger=logger))
             if settings != [] and vpn_config != []:
                 if settings['deploymentMode']=='passthrough' and vpn_config["mode"]=='hub':
                     logger.info("Backing up MX BGP settings...")
-                    operations.append(backupMxBgp(net=net, dir=dir, dashboard=dashboard))
+                    operations.append(backupMxBgp(net=net, dir=dir, dashboard=dashboard, logger=logger))
         # Backup MR Settings
         if 'wireless' in net['productTypes']:
             logger.info("Backing up MR Wireless Network settings...")
-            operations.append(backupMrWirelessSettings(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMrWirelessSettings(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MR SSID configs settings...")
-            operations.append(backupMrSsidConfigs(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMrSsidConfigs(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MR RF Profiles settings...")
-            operations.append(backupMrRfProfiles(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMrRfProfiles(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MR SSID Firewall settings...")
-            operations.append(backupMrSsidFW(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMrSsidFW(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MR SSID Shaping settings...")
-            operations.append(backupMrSsidShaping(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMrSsidShaping(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MR Bluetooth settings...")
-            operations.append(backupMrBluetooth(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupMrBluetooth(net=net, dir=dir, dashboard=dashboard, logger=logger))
         # Backup MS settings
         if 'switch' in net['productTypes']:
             logger.info("Backing up MS Switch settings...")
-            operations.append(backupSwitchSettings(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchSettings(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS DSCP to COS Mappings settings...")
-            operations.append(backupSwitchDscpCosMap(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchDscpCosMap(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS MTU settings...")
-            operations.append(backupSwitchMtu(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchMtu(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS QoS settings...")
-            operations.append(backupSwitchQos(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchQos(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS STP settings...")
-            operations.append(backupSwitchStp(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchStp(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS ACL settings...")
-            operations.append(backupSwitchAcl(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchAcl(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Stack Settings settings...")
-            operations.append(backupSwitchStacks(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchStacks(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Port Schedules  settings...")
-            operations.append(backupSwitchPortSchedules(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchPortSchedules(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Access Policies  settings...")
-            operations.append(backupSwitchAccessPolicies(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchAccessPolicies(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Link Aggregation  settings...")
-            operations.append(backupSwitchLinkAggregations(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchLinkAggregations(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Switch Port Configs settings...")
-            operations.append(backupSwitchPortConfigs(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchPortConfigs(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Switch SVIs settings...")
-            operations.append(backupSwitchSvis(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchSvis(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Static Routes settings...")
-            operations.append(backupSwitchStaticRouting(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchStaticRouting(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS OSPF settings...")
-            operations.append(backupSwitchOspf(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchOspf(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Multicast Routing settings...")
-            operations.append(backupSwitchRoutingMulticast(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchRoutingMulticast(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Switch DHCP Security settings...")
-            operations.append(backupSwitchDhcpSecurity(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchDhcpSecurity(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Switch DAI settings...")
-            operations.append(backupSwitchDai(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchDai(net=net, dir=dir, dashboard=dashboard, logger=logger))
             logger.info("Backing up MS Storm Control settings...")
-            operations.append(backupSwitchStormControl(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupSwitchStormControl(net=net, dir=dir, dashboard=dashboard, logger=logger))
 
         # Backup Network Settings
         if 'switch' or 'appliance' or 'wireless' in net['productTypes']:
             logger.info("Backing up Network Group Policy settings...")
-            operations.append(backupNetworkGroupPolicies(net=net, dir=dir, dashboard=dashboard))
+            operations.append(backupNetworkGroupPolicies(net=net, dir=dir, dashboard=dashboard, logger=logger))
         logger.info("Backing up Network Alert settings...")
-        operations.append(backupNetworkAlerts(net=net, dir=dir, dashboard=dashboard))
+        operations.append(backupNetworkAlerts(net=net, dir=dir, dashboard=dashboard, logger=logger))
         logger.info("Backing up Network Device settings...")
-        operations.append(backupNetworkDevices(net=net, dir=dir, dashboard=dashboard))
+        operations.append(backupNetworkDevices(net=net, dir=dir, dashboard=dashboard, logger=logger))
         logger.info("Backing up Network Floorplan settings...")
-        operations.append(backupNetworkFloorPlans(net=net, dir=dir, dashboard=dashboard))
+        operations.append(backupNetworkFloorPlans(net=net, dir=dir, dashboard=dashboard, logger=logger))
         logger.info("Backing up Network Webhooks settings...")
-        operations.append(backupNetworkWebhooks(net=net, dir=dir, dashboard=dashboard))
+        operations.append(backupNetworkWebhooks(net=net, dir=dir, dashboard=dashboard, logger=logger))
         logger.info("Backing up Network Syslog settings...")
-        operations.append(backupNetworkSyslog(net=net, dir=dir, dashboard=dashboard))
+        operations.append(backupNetworkSyslog(net=net, dir=dir, dashboard=dashboard, logger=logger))
         logger.info("Backing up Network SNMP settings...")
-        operations.append(backupNetworkSnmp(net=net, dir=dir, dashboard=dashboard))
+        operations.append(backupNetworkSnmp(net=net, dir=dir, dashboard=dashboard, logger=logger))
         logger.info("Backing up Network Firmware Version settings...")
-        operations.append(backupNetworkFirmwareVersions(net=net, dir=dir, dashboard=dashboard))
+        operations.append(backupNetworkFirmwareVersions(net=net, dir=dir, dashboard=dashboard, logger=logger))
     return operations
 
-def backupNetworkDevices(net, dir, dashboard):
+def backupNetworkDevices(net, dir, dashboard, logger):
     """
     Back up network device settings like names, tags, locations, IP addresses
     :param net: Network to get devices list from
@@ -178,7 +155,7 @@ def backupNetworkDevices(net, dir, dashboard):
         operation["status"]=e
     return operation
 
-def backupNetworkFloorPlans(net, dir, dashboard):
+def backupNetworkFloorPlans(net, dir, dashboard, logger):
     """
     Back up network floorplans
     :param net: Network to get Floorplans for
@@ -207,7 +184,7 @@ def backupNetworkFloorPlans(net, dir, dashboard):
             if res.status_code == 200:
                 with open(f'{dir}/network/{net["name"]}/floorplans/{floorplan["name"]}.png', 'wb') as f:
                     shutil.copyfileobj(res.raw, f)
-                logger.info('Image sucessfully Downloaded: ', f'{dir}/network/{net["name"]}/floorplans/{floorplan["name"]}.png')
+                logger.info(f'Image sucessfully Downloaded: {dir}/network/{net["name"]}/floorplans/{floorplan["name"]}.png')
             else:
                 logger.error(f'Image for floorplan {floorplan["name"]} couldn\'t be retrieved')
         operation['status']="Complete"
@@ -216,7 +193,7 @@ def backupNetworkFloorPlans(net, dir, dashboard):
         operation["status"]=e
     return operation
 
-def backupMxVlans(net, dir, dashboard):
+def backupMxVlans(net, dir, dashboard, logger):
     """
     Backup MX VLAN Configs
     :param net: Network to get MX VLANs for
@@ -259,7 +236,7 @@ def backupMxVlans(net, dir, dashboard):
     return operation
 
 
-def backupMxFirewall(net, dir, dashboard):
+def backupMxFirewall(net, dir, dashboard, logger):
     """
     Back up MX Firewall settings
     :param net: Network to get MX Firewall for
@@ -300,7 +277,7 @@ def backupMxFirewall(net, dir, dashboard):
     return operation
 
 
-def backupMxSecurity(net, dir, dashboard):
+def backupMxSecurity(net, dir, dashboard, logger):
     """
     Back up MX AMP and Intrusion settings
     :param net: Network to get MX AMP and Intrusion settings for
@@ -338,7 +315,7 @@ def backupMxSecurity(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupMxContentFiltering(net, dir, dashboard):
+def backupMxContentFiltering(net, dir, dashboard, logger):
     """
     Back up MX Content Filtering settings
     :param net: Network to get MX Content Filtering for
@@ -377,7 +354,7 @@ def backupMxContentFiltering(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupMxShaping(net, dir, dashboard):
+def backupMxShaping(net, dir, dashboard, logger):
     """
     Back up MX Shaping settings
     :param net: Network to get MX Shaping for
@@ -417,7 +394,7 @@ def backupMxShaping(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupMxVpnConfig(net, dir, dashboard):
+def backupMxVpnConfig(net, dir, dashboard, logger):
     """
     Back up MX VPN settings
     :param net: Network to get VPN Configs for
@@ -450,7 +427,7 @@ def backupMxVpnConfig(net, dir, dashboard):
         operation['status'] = e
     return vpn_config, operation
 
-def backupMxWarmSpare(net, dir, dashboard):
+def backupMxWarmSpare(net, dir, dashboard, logger):
     """
     Back up MX Warm Spare settings
     :param net: Network to get Warm Spare for
@@ -481,7 +458,7 @@ def backupMxWarmSpare(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchQos(net, dir, dashboard):
+def backupSwitchQos(net, dir, dashboard, logger):
     """
     Back up MS QoS settings
     :param net: Network to get Switch QOS for
@@ -514,7 +491,7 @@ def backupSwitchQos(net, dir, dashboard):
     return operation
 
 
-def backupSwitchPortSchedules(net, dir, dashboard):
+def backupSwitchPortSchedules(net, dir, dashboard, logger):
     """
     Back up MS Port Schedule settings
     :param net: Network to get Switch Port Schedules for
@@ -546,7 +523,7 @@ def backupSwitchPortSchedules(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchPortConfigs(net, dir, dashboard):
+def backupSwitchPortConfigs(net, dir, dashboard, logger):
     """
     Back up MS Port Configs
     :param net: Network to get Switch Ports for
@@ -596,7 +573,7 @@ def backupSwitchPortConfigs(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupNetworkAlerts(net, dir, dashboard):
+def backupNetworkAlerts(net, dir, dashboard, logger):
     """
     Back up Network Alerts
     :param net: Network to get Alerts for
@@ -626,7 +603,7 @@ def backupNetworkAlerts(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupMrSsidConfigs(net, dir, dashboard):
+def backupMrSsidConfigs(net, dir, dashboard, logger):
     """
     Back up MR SSID Configs
     :param net: Network to get SSID configs for
@@ -658,7 +635,7 @@ def backupMrSsidConfigs(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupMrRfProfiles(net, dir, dashboard):
+def backupMrRfProfiles(net, dir, dashboard, logger):
     """
     Back up MR SSID Configs
     :param net: Network to get RF Profiles for
@@ -705,7 +682,7 @@ def backupMrRfProfiles(net, dir, dashboard):
     return operation
 
 
-def backupMrSsidFW(net, dir, dashboard):
+def backupMrSsidFW(net, dir, dashboard, logger):
     """
     Back up MR SSID FW
     :param net: Network to get SSID FW for
@@ -748,7 +725,7 @@ def backupMrSsidFW(net, dir, dashboard):
     return operation
 
 
-def backupMrSsidShaping(net, dir, dashboard):
+def backupMrSsidShaping(net, dir, dashboard, logger):
     """
     Back up MR SSID Shaping
     :param net: Network to get SSID Shaping for
@@ -784,7 +761,7 @@ def backupMrSsidShaping(net, dir, dashboard):
     return operation
 
 
-def backupSwitchSvis(net, dir, dashboard):
+def backupSwitchSvis(net, dir, dashboard, logger):
     """
     Back up MS SVIs
     :param net: Network to get Switch SVIs for
@@ -831,7 +808,7 @@ def backupSwitchSvis(net, dir, dashboard):
     return operation
 
 
-def backupMxStaticRouting(net, dir, dashboard):
+def backupMxStaticRouting(net, dir, dashboard, logger):
     """
     Back up MX Static Routing
     :param net: Network to get MX Static routes for
@@ -863,7 +840,7 @@ def backupMxStaticRouting(net, dir, dashboard):
     return operation
 
 
-def backupSwitchOspf(net, dir, dashboard):
+def backupSwitchOspf(net, dir, dashboard, logger):
     """
     Back up Switch OSPF Settings
     :param net: Network to get Switch OSPF for
@@ -895,7 +872,7 @@ def backupSwitchOspf(net, dir, dashboard):
     return operation
 
 
-def backupSwitchAccessPolicies(net, dir, dashboard):
+def backupSwitchAccessPolicies(net, dir, dashboard, logger):
     """
     Back up Switch Access Policies
     :param net: Network to get Access Policies for
@@ -926,7 +903,7 @@ def backupSwitchAccessPolicies(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchStp(net, dir, dashboard):
+def backupSwitchStp(net, dir, dashboard, logger):
     """
     Back up Switch STP Settings
     :param net: Network to get STP for
@@ -957,7 +934,7 @@ def backupSwitchStp(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchAcl(net, dir, dashboard):
+def backupSwitchAcl(net, dir, dashboard, logger):
     """
     Back up Switch ACL Settings
     :param net: Network to get Switch ACL for
@@ -988,7 +965,7 @@ def backupSwitchAcl(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchDhcpSecurity(net, dir, dashboard):
+def backupSwitchDhcpSecurity(net, dir, dashboard, logger):
     """
     Back up Switch DHCP Security
     :param net: Network to get Switch DHCP Security for
@@ -1019,7 +996,7 @@ def backupSwitchDhcpSecurity(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupMxSdWanSettings(net, dir, dashboard):
+def backupMxSdWanSettings(net, dir, dashboard, logger):
     """
     Back up MX SDWAN Settings
     :param net: Network to get SDWAN settings for
@@ -1060,7 +1037,7 @@ def backupMxSdWanSettings(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupNetworkGroupPolicies(net, dir, dashboard):
+def backupNetworkGroupPolicies(net, dir, dashboard, logger):
     """
     Back up Network Group Policies
     :param net: Network to get group policies for
@@ -1089,7 +1066,7 @@ def backupNetworkGroupPolicies(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupNetworkWebhooks(net, dir, dashboard):
+def backupNetworkWebhooks(net, dir, dashboard, logger):
     """
     Back up Network Webhooks
     :param net: Network to get Webhooks for
@@ -1122,7 +1099,7 @@ def backupNetworkWebhooks(net, dir, dashboard):
     return operation
 
 
-def backupNetworkSyslog(net, dir, dashboard):
+def backupNetworkSyslog(net, dir, dashboard, logger):
     """
     Back up Network Syslog
     :param net: Network to get Syslog for
@@ -1150,7 +1127,7 @@ def backupNetworkSyslog(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupNetworkSnmp(net, dir, dashboard):
+def backupNetworkSnmp(net, dir, dashboard, logger):
     """
     Back up Network SNMP
     :param net: Network to get SNMP for
@@ -1178,7 +1155,7 @@ def backupNetworkSnmp(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupNetworkFirmwareVersions(net, dir, dashboard):
+def backupNetworkFirmwareVersions(net, dir, dashboard, logger):
     """
     Back up Network Firmware Versions
     :param net: Network to get firmware versions for
@@ -1206,7 +1183,7 @@ def backupNetworkFirmwareVersions(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchStaticRouting(net, dir, dashboard):
+def backupSwitchStaticRouting(net, dir, dashboard, logger):
     """
     Back up Switch Static Routes
     :param net: Network to get switch static routes for
@@ -1243,7 +1220,7 @@ def backupSwitchStaticRouting(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchStormControl(net, dir, dashboard):
+def backupSwitchStormControl(net, dir, dashboard, logger):
     """
     Back up Switch Storm Control
     :param net: Network to get storm control for
@@ -1274,7 +1251,7 @@ def backupSwitchStormControl(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupOrganizationPolicyObjects(org, dir, dashboard):
+def backupOrganizationPolicyObjects(org, dir, dashboard, logger):
     """
     Back up organization Policy Objects
     :param org: Organization to get policy objects from
@@ -1305,7 +1282,7 @@ def backupOrganizationPolicyObjects(org, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupOrganizationMxVpnFirewall(org, dir, dashboard):
+def backupOrganizationMxVpnFirewall(org, dir, dashboard, logger):
     """
     Back up organization VPN Firewall rules
     :param org: Organization to get policy objects from
@@ -1332,7 +1309,7 @@ def backupOrganizationMxVpnFirewall(org, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupOrganizationMxIpsecVpn(org, dir, dashboard):
+def backupOrganizationMxIpsecVpn(org, dir, dashboard, logger):
     """
     Back up organization VPN Firewall rules
     :param org: Organization to get policy objects from
@@ -1359,7 +1336,7 @@ def backupOrganizationMxIpsecVpn(org, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupMxBgp(net, dir, dashboard):
+def backupMxBgp(net, dir, dashboard, logger):
     """
     Back up MX BGP Settings
     :param net: Network to get BGP settings for
@@ -1390,7 +1367,7 @@ def backupMxBgp(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupMxSettings(net, dir, dashboard):
+def backupMxSettings(net, dir, dashboard, logger):
     """
     Back up MX Settings
     :param net: Network to get MX settings for
@@ -1422,7 +1399,7 @@ def backupMxSettings(net, dir, dashboard):
         operation['status'] = e
     return settings, operation
 
-def backupSwitchDai(net, dir, dashboard):
+def backupSwitchDai(net, dir, dashboard, logger):
     """
     Back up Switch Dynamic ARP Inspection Trusted Servers
     :param net: Network to get DAI settings for
@@ -1453,7 +1430,7 @@ def backupSwitchDai(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchDscpCosMap(net, dir, dashboard):
+def backupSwitchDscpCosMap(net, dir, dashboard, logger):
     """
         Back up Switch DSCP COS Map
         :param net: Network to get DSCP COS Mappings for
@@ -1485,7 +1462,7 @@ def backupSwitchDscpCosMap(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchLinkAggregations(net, dir, dashboard):
+def backupSwitchLinkAggregations(net, dir, dashboard, logger):
     """
     Back up Switch Link Aggregations
     :param net: Network to get Link Aggs for
@@ -1517,7 +1494,7 @@ def backupSwitchLinkAggregations(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchMtu(net, dir, dashboard):
+def backupSwitchMtu(net, dir, dashboard, logger):
     """
     Back up Switch MTU Settings
     :param net: Network to get MTU Settings for
@@ -1548,7 +1525,7 @@ def backupSwitchMtu(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchStacks(net, dir, dashboard):
+def backupSwitchStacks(net, dir, dashboard, logger):
     """
     Back up Switch Stack Settings
     :param net: Network to get Stack Settings for
@@ -1580,7 +1557,7 @@ def backupSwitchStacks(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchRoutingMulticast(net, dir, dashboard):
+def backupSwitchRoutingMulticast(net, dir, dashboard, logger):
     """
     Back up Switch Multicast Settings
     :param net: Network to get Multicast Settings for
@@ -1615,7 +1592,7 @@ def backupSwitchRoutingMulticast(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupMrBluetooth(net, dir, dashboard):
+def backupMrBluetooth(net, dir, dashboard, logger):
     """
     Back up MR Bluetooth Configs
     :param net: Network to get Bluetooth configs for
@@ -1640,30 +1617,31 @@ def backupMrBluetooth(net, dir, dashboard):
         with open(f'{dir}/network/{net["name"]}/wireless/bluetooth_settings/network_bluetooth_settings.json', 'w') as fp:
             json.dump(network_bluetooth_settings, fp)
             fp.close()
-        if network_bluetooth_settings['majorMinorAssignmentMode']=="Unique":
-            # Get devices in network
-            devices = dashboard.networks.getNetworkDevices(networkId=net['id'])
-            # For every device that is an MR, get their bluetooth_settings settings
-            for device in devices:
-                if 'MR' in device['model'] or device['model'] in ['CW9166I', 'CW9164I', 'CW9162I']:
-                    try:
-                        bluetooth_settings = dashboard.wireless.getDeviceWirelessBluetoothSettings(serial=device['serial'])
-                        if not os.path.exists(f'{dir}/network/{net["name"]}/wireless/bluetooth_settings/{device["serial"]}'):
-                            os.makedirs(f'{dir}/network/{net["name"]}/wireless/bluetooth_settings/{device["serial"]}')
-                        with open(
-                                f'{dir}/network/{net["name"]}/wireless/bluetooth_settings/{device["serial"]}/bluetooth_settings.json',
-                                'w') as fp:
-                            json.dump(bluetooth_settings, fp)
-                            fp.close()
-                    except meraki.APIError as e:
-                        logger.error(e)
+        if network_bluetooth_settings['advertisingEnabled']==True:
+            if network_bluetooth_settings['majorMinorAssignmentMode']=="Unique":
+                # Get devices in network
+                devices = dashboard.networks.getNetworkDevices(networkId=net['id'])
+                # For every device that is an MR, get their bluetooth_settings settings
+                for device in devices:
+                    if 'MR' in device['model'] or device['model'] in ['CW9166I', 'CW9164I', 'CW9162I']:
+                        try:
+                            bluetooth_settings = dashboard.wireless.getDeviceWirelessBluetoothSettings(serial=device['serial'])
+                            if not os.path.exists(f'{dir}/network/{net["name"]}/wireless/bluetooth_settings/{device["serial"]}'):
+                                os.makedirs(f'{dir}/network/{net["name"]}/wireless/bluetooth_settings/{device["serial"]}')
+                            with open(
+                                    f'{dir}/network/{net["name"]}/wireless/bluetooth_settings/{device["serial"]}/bluetooth_settings.json',
+                                    'w') as fp:
+                                json.dump(bluetooth_settings, fp)
+                                fp.close()
+                        except meraki.APIError as e:
+                            logger.error(e)
         operation['status'] = "Complete"
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
     return operation
 
-def backupMrWirelessSettings(net, dir, dashboard):
+def backupMrWirelessSettings(net, dir, dashboard, logger):
     """
     Back up MR Network Wireless Settings
     :param net: Network to get Network Wireless Settings for
@@ -1693,7 +1671,7 @@ def backupMrWirelessSettings(net, dir, dashboard):
         operation['status'] = e
     return operation
 
-def backupSwitchSettings(net, dir, dashboard):
+def backupSwitchSettings(net, dir, dashboard, logger):
     """
     Back up Switch Multicast Settings
     :param net: Network to get Multicast Settings for
