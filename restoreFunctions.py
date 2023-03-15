@@ -1,37 +1,12 @@
 import json
 import os
 import time
-import pandas as pd
 import base64
 import sys
 import meraki
-import logging
-import logging_class
-import config
 
 
-if config.logging_level=="DEBUG":
-    level=logging.DEBUG
-elif config.logging_level=="INFO":
-    level=logging.INFO
-elif config.logging_level=="ERROR":
-    level=logging.ERROR
-
-# create logger with 'spam_application'
-logger = logging.getLogger("merakiBackupAndRestore")
-logger.setLevel(level)
-
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-
-ch.setFormatter(logging_class.CustomFormatter())
-
-logger.addHandler(ch)
-
-#dashboard = meraki.DashboardAPI(config.API_KEY)
-
-def merakiRestore(dir, org, nets, dashboard):
+def merakiRestore(dir, org, nets, dashboard, logger):
     """
     Wrapper function for restore operations. Will iterate across the list of networks and perform applicable
     restore operations, and return a list of dictionaries of operations with their status.
@@ -46,59 +21,59 @@ def merakiRestore(dir, org, nets, dashboard):
         if 'policy_objects' in next(os.walk(f"{path}/organization"))[1]:
             if ('policy_objects.json' and 'policy_objects_groups.json') in next(os.walk(f"{path}/organization/policy_objects"))[2]:
                 logger.info("Restoring Organization Policy Objects...")
-                operations.append(restoreOrganizationPolicyObjects(org=org, dashboard=dashboard, path=path))
+                operations.append(restoreOrganizationPolicyObjects(org=org, dashboard=dashboard, path=path, logger=logger))
         if 'ipsec_vpn' in next(os.walk(f"{path}/organization"))[1]:
             if ('ipsec_vpn.json') in next(os.walk(f"{path}/organization/ipsec_vpn"))[2]:
                 logger.info("Restoring Organization IPsec VPN...")
-                operations.append(restoreOrganizationMxIpsecVpn(org=org, dashboard=dashboard, path=path))
+                operations.append(restoreOrganizationMxIpsecVpn(org=org, dashboard=dashboard, path=path, logger=logger))
         if 'vpn_firewall' in next(os.walk(f"{path}/organization"))[1]:
             if ('vpn_firewall.json') in next(os.walk(f"{path}/organization/vpn_firewall"))[2]:
                 logger.info("Restoring Organization VPN Firewall...")
-                operations.append(restoreOrganizationMxVpnFirewall(org=org, dashboard=dashboard, path=path))
+                operations.append(restoreOrganizationMxVpnFirewall(org=org, dashboard=dashboard, path=path, logger=logger))
 
     for net in nets:
         logger.info(f"Restoring settings for network {net['name']}...")
         settings_in_backup = next(os.walk(f"{path}/network/{net['name']}"))[1]
-        logger.debug(settings_in_backup)
         # Check if firmware in backup matches firmware in target network
         if 'firmware' in settings_in_backup:
-            checkFirmware(net=net, dashboard=dashboard, path=path)
+            checkFirmware(net=net, dashboard=dashboard, path=path, logger=logger)
         devices_in_network = dashboard.networks.getNetworkDevices(networkId=net['id'])
         # Restore Network Settings
         if 'webhooks' in settings_in_backup:
             if ('webhooks_payload_templates.json' and 'webhooks_servers.json') in next(os.walk(f"{path}/network/{net['name']}/webhooks"))[2]:
                 logger.info("Restoring Webhooks...")
-                operations.append(restoreNetworkWebhooks(net=net, dashboard=dashboard, path=path))
+                operations.append(restoreNetworkWebhooks(net=net, dashboard=dashboard, path=path, logger=logger))
         if 'syslog' in settings_in_backup:
             if ('syslog.json') in next(os.walk(f"{path}/network/{net['name']}/syslog"))[2]:
                 logger.info("Restoring Syslog...")
-                operations.append(restoreNetworkSyslog(net=net, dashboard=dashboard, path=path))
+                operations.append(restoreNetworkSyslog(net=net, dashboard=dashboard, path=path, logger=logger))
         if 'snmp' in settings_in_backup:
             if ('snmp.json') in next(os.walk(f"{path}/network/{net['name']}/snmp"))[2]:
                 logger.info("Restoring SNMP...")
-                operations.append(restoreNetworkSnmp(net=net, dashboard=dashboard, path=path))
+                operations.append(restoreNetworkSnmp(net=net, dashboard=dashboard, path=path, logger=logger))
         if 'alert_settings' in settings_in_backup:
             if ('alerts.json') in next(os.walk(f"{path}/network/{net['name']}/alert_settings"))[2]:
                 logger.info("Restoring Alerts...")
-                operations.append(restoreNetworkAlerts(net=net, dashboard=dashboard, path=path))
+                operations.append(restoreNetworkAlerts(net=net, dashboard=dashboard, path=path, logger=logger))
         if 'floorplans' in settings_in_backup:
             if ('floorplans.json') in next(os.walk(f"{path}/network/{net['name']}/floorplans"))[2]:
                 logger.info("Restoring Floorplans...")
-                operations.append(restoreNetworkFloorplans(net=net, dashboard=dashboard, path=path))
+                fp_operation, ffp = restoreNetworkFloorplans(net=net, dashboard=dashboard, path=path, logger=logger)
+                operations.append(fp_operation)
         if 'devices' in settings_in_backup:
             if ('network_devices.json') in next(os.walk(f"{path}/network/{net['name']}/devices"))[2]:
                 logger.info("Restoring Network Device settings...")
-                operation, devices_to_update = restoreNetworkDevices(net=net, org=org, devices_in_network=devices_in_network, dashboard=dashboard, path=path)
+                operation, devices_to_update = restoreNetworkDevices(net=net, org=org, devices_in_network=devices_in_network, dashboard=dashboard, path=path, updated_floorplans=ffp, logger=logger)
                 operations.append(operation)
         if 'appliance' or 'switch' or 'wireless' in net['productTypes'] and 'group_policies' in settings_in_backup:
             logger.info("Restoring Group Policies...")
-            operations.append(restoreNetworkGroupPolicies(net=net, dashboard=dashboard, path=path))
+            operations.append(restoreNetworkGroupPolicies(net=net, dashboard=dashboard, path=path, logger=logger))
         if 'appliance' in net['productTypes'] and 'appliance' in settings_in_backup:
             if 'settings' in next(os.walk(f"{path}/network/{net['name']}/appliance"))[1]:
                 # Restore MX Settings
                 if 'settings.json' in next(os.walk(f"{path}/network/{net['name']}/appliance/settings"))[2]:
                     logger.info("Restoring MX appliance settings...")
-                    settings_operation, settings_data = restoreMxSettings(net=net, dashboard=dashboard, path=path)
+                    settings_operation, settings_data = restoreMxSettings(net=net, dashboard=dashboard, path=path, logger=logger)
                     operations.append(settings_operation)
             if settings_data['deploymentMode']=="routed":
                 if 'vlans' in next(os.walk(f"{path}/network/{net['name']}/appliance"))[1]:
@@ -107,70 +82,70 @@ def merakiRestore(dir, org, nets, dashboard):
                     if 'vlan_settings.json' in next(os.walk(f"{path}/network/{net['name']}/appliance/vlans"))[2]:
                         # Apply VLAN settings
                         logger.info("Restoring VLAN settings...")
-                        vlan_settings_operation, vlan_settings_data = restoreMxVlanSettings(net=net, dashboard=dashboard, path=path)
+                        vlan_settings_operation, vlan_settings_data = restoreMxVlanSettings(net=net, dashboard=dashboard, path=path, logger=logger)
                         operations.append(vlan_settings_operation)
                         # If VLANs were enabled in the checkpoint, then proceed to configure them individually
                         if vlan_settings_data['vlansEnabled'] == True and ('vlan_config.json' and 'vlan_ports.json') in next(os.walk(f"{path}/network/{net['name']}/appliance/vlans"))[2]:
                             logger.info("Restoring MX per VLAN configuration...")
-                            operations.append(restoreMxVlansBatch(org=org, net=net, dashboard=dashboard, path=path))
+                            operations.append(restoreMxVlansBatch(org=org, net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'appliance_routing' in next(os.walk(f"{path}/network/{net['name']}/appliance"))[1]:
                     # Restore MX Static Routing
                     # Needs to be restored before it is used for Site to Site VPN configs
                     if 'static_routes.json' in next(os.walk(f"{path}/network/{net['name']}/appliance/appliance_routing"))[2]:
                         logger.info('Restoring MX Static Routes...')
-                        operations.append(restoreMxStaticRouting(net=net, dashboard=dashboard, path=path))
+                        operations.append(restoreMxStaticRouting(net=net, dashboard=dashboard, path=path, logger=logger))
             elif settings_data['deploymentMode']=='passthrough':
                 if 'bgp_settings' in next(os.walk(f"{path}/network/{net['name']}/appliance"))[1]:
                     # Restore MX BGP
                     if 'bgp.json' in next(os.walk(f"{path}/network/{net['name']}/appliance"))[2]:
                         logger.info('Restoring MX BGP settings...')
-                        operations.append(restoreMxBgp(net=net, dashboard=dashboard, path=path))
+                        operations.append(restoreMxBgp(net=net, dashboard=dashboard, path=path, logger=logger))
             if 'security' in next(os.walk(f"{path}/network/{net['name']}/appliance"))[1]:
                 # Restore MX Security Settings
                 if ('amp.json' and 'ips.json') in next(os.walk(f"{path}/network/{net['name']}/appliance/security"))[
                     2]:
                     logger.info("Restoring MX Security...")
-                    operations.append(restoreMxSecurity(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreMxSecurity(net=net, dashboard=dashboard, path=path, logger=logger))
                 # Restore MX Firewall Settings
                 if ('l3_fw.json' and 'l7_fw.json') in next(os.walk(f"{path}/network/{net['name']}/appliance/security"))[
                     2]:
                     logger.info("Restoring MX Firewall...")
-                    operations.append(restoreMxFirewall(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreMxFirewall(net=net, dashboard=dashboard, path=path, logger=logger))
                 # Restore MX Content Filtering
                 if ('content_filtering.json') in \
                         next(os.walk(f"{path}/network/{net['name']}/appliance/security"))[
                             2]:
                     logger.info("Restoring MX Content Filtering...")
-                    operations.append(restoreMxContentFiltering(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreMxContentFiltering(net=net, dashboard=dashboard, path=path, logger=logger))
             if 'shaping' in next(os.walk(f"{path}/network/{net['name']}/appliance"))[1]:
                 # Restore Shaping Settings
                 if ('global_shaping.json' and 'shaping_rules') in \
                         next(os.walk(f"{path}/network/{net['name']}/appliance/shaping"))[
                                 2]:
                     logger.info("Restoring MX Shaping...")
-                    operations.append(restoreMxShaping(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreMxShaping(net=net, dashboard=dashboard, path=path, logger=logger))
             if 'vpn_config' in next(os.walk(f"{path}/network/{net['name']}/appliance"))[1]:
                 # Restore VPN Settings
                 if ('vpn_config.json') in \
                         next(os.walk(f"{path}/network/{net['name']}/appliance/vpn_config"))[
                                 2]:
                     logger.info("Restoring VPN Settings...")
-                    operations.append(restoreMxVpnConfig(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreMxVpnConfig(net=net, dashboard=dashboard, path=path, logger=logger))
             if 'sdwan_settings' in next(os.walk(f"{path}/network/{net['name']}/appliance"))[1]:
                 # Restore SDWAN Settings
                 logger.info("Restoring SDWAN Settings...")
-                operations.append(restoreMxSdWanSettings(net=net, dashboard=dashboard, path=path))
+                operations.append(restoreMxSdWanSettings(net=net, dashboard=dashboard, path=path, logger=logger))
         if 'switch' in net['productTypes']and 'switch' in settings_in_backup:
             if 'switch_settings' in next(os.walk(f"{path}/network/{net['name']}/switch"))[1]:
                 if 'port_schedules.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     logger.info("Restoring Switch Port Schedules...")
-                    operations.append(restoreSwitchPortSchedules(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchPortSchedules(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'qos_rules.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     logger.info("Restoring Switch QoS...")
-                    operations.append(restoreSwitchQos(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchQos(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'access_policies.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     logger.info("Restoring Access Policies...")
-                    operations.append(restoreSwitchAccessPolicies(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchAccessPolicies(net=net, dashboard=dashboard, path=path, logger=logger))
                 if len(next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[1])>0:
                     number_of_switches = len(next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[1])
                     if number_of_switches > 0:
@@ -178,52 +153,52 @@ def merakiRestore(dir, org, nets, dashboard):
                         # Restore Switch Ports
                         operations.append(restoreSwitchPortConfigsBatch(org=org, net=net, dashboard=dashboard,
                                                                         path=path,
-                                                                        devices_in_network=devices_in_network))
+                                                                        devices_in_network=devices_in_network, logger=logger))
                 if 'dhcp_policies.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     # Restore Switch DHCP Security
                     logger.info("Restoring Switch DHCP Policies...")
-                    operations.append(restoreSwitchDhcpSecurity(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchDhcpSecurity(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'switch_stp.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     # Restore Switch STP
                     logger.info("Restoring Switch STP...")
-                    operations.append(restoreSwitchStp(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchStp(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'switch_acl.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     # Restore Switch ACL
                     logger.info("Restoring Switch ACL...")
-                    operations.append(restoreSwitchAcl(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchAcl(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'switch_dscp_cos.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     # Restore Switch DHCP COS
                     logger.info("Restoring Switch DHCP COS Mappings...")
-                    operations.append(restoreSwitchDscpCosMap(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchDscpCosMap(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'switch_storm_control.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     # Restore Switch Storm Control
                     logger.info("Restoring Switch Storm Control...")
-                    operations.append(restoreSwitchStormControl(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchStormControl(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'switch_mtu.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     # Restore Switch MTU
                     logger.info("Restoring Switch MTU...")
-                    operations.append(restoreSwitchMtu(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchMtu(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'switch_link_aggregations.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     # Restore Switch Link Aggregation
                     logger.info("Restoring Switch Link Aggregation...")
-                    operations.append(restoreSwitchLinkAgg(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network))
+                    operations.append(restoreSwitchLinkAgg(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network, logger=logger))
                 if 'switch_settings.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_settings"))[2]:
                     # Restore Switch Network Settings
                     logger.info("Restoring Switch Network Settings...")
-                    operations.append(restoreSwitchSettings(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchSettings(net=net, dashboard=dashboard, path=path, logger=logger))
 
             if 'switch_routing' in next(os.walk(f"{path}/network/{net['name']}/switch"))[1]:
                 if 'ospf.json' in next(os.walk(f"{path}/network/{net['name']}/switch/switch_routing/"))[2]:
                     # Restore Switch OSPF
                     logger.info(f"Restoring Switch OSPF for switch...")
-                    operations.append(restoreSwitchOspf(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreSwitchOspf(net=net, dashboard=dashboard, path=path, logger=logger))
                 if len(next(os.walk(f"{path}/network/{net['name']}/switch/switch_routing"))[1])>0:
                     # Restore Switch SVIs
                     logger.info(f"Restoring Switch SVIs...")
-                    operations.append(restoreSwitchSvis(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network))
+                    operations.append(restoreSwitchSvis(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network, logger=logger))
                     # Restore Switch Static Routes
                     logger.info(f"Restoring Switch Static Routes...")
-                    operations.append(restoreSwitchStaticRouting(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network))
+                    operations.append(restoreSwitchStaticRouting(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network, logger=logger))
 
 
         if 'wireless' in net['productTypes']:
@@ -231,33 +206,33 @@ def merakiRestore(dir, org, nets, dashboard):
                 if 'ssids.json' in next(os.walk(f"{path}/network/{net['name']}/wireless/ssid_settings/"))[2]:
                     # Restore SSID Settings
                     logger.info("Restoring SSID settings...")
-                    operations.append(restoreMrSsidConfigs(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreMrSsidConfigs(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'l3_rules.json' and 'l7_rules.json' in next(os.walk(f"{path}/network/{net['name']}/wireless/ssid_settings/"))[2]:
                     # Restore SSID FW settings
                     logger.info("Restoring SSID FW...")
-                    operations.append(restoreMrSsidFW(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreMrSsidFW(net=net, dashboard=dashboard, path=path, logger=logger))
                 if 'shaping_rules.json' in next(os.walk(f"{path}/network/{net['name']}/wireless/ssid_settings/"))[2]:
                     # Restore SSID Shaping settings
                     logger.info("Restoring SSID Shaping...")
-                    operations.append(restoreMrSsidShaping(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreMrSsidShaping(net=net, dashboard=dashboard, path=path, logger=logger))
             if 'radio_settings' in next(os.walk(f"{path}/network/{net['name']}/wireless"))[1]:
                 if 'rf_profiles.json' in next(os.walk(f"{path}/network/{net['name']}/wireless/radio_settings/"))[2]:
                     # Restore RF Profile settings
                     logger.info("Restoring RF Profiles...")
-                    operations.append(restoreMrRfProfiles(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network))
+                    operations.append(restoreMrRfProfiles(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network, logger=logger))
             if 'bluetooth_settings' in next(os.walk(f"{path}/network/{net['name']}/wireless"))[1]:
                 if 'network_bluetooth_settings.json' in next(os.walk(f"{path}/network/{net['name']}/wireless/bluetooth_settings/"))[2]:
                     # Restore Bluetooth settings
                     logger.info("Restoring MR Bluetooth...")
-                    operations.append(restoreMrBluetooth(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network))
+                    operations.append(restoreMrBluetooth(net=net, dashboard=dashboard, path=path, devices_in_network=devices_in_network, logger=logger))
             if 'network_wireless_settings' in next(os.walk(f"{path}/network/{net['name']}/wireless"))[1]:
                 if 'network_wireless_settings.json' in next(os.walk(f"{path}/network/{net['name']}/wireless/network_wireless_settings/"))[2]:
                     # Restore Wireless Settings
                     logger.info("Restoring Wireless Network Settings...")
-                    operations.append(restoreMrWirelessSettings(net=net, dashboard=dashboard, path=path))
+                    operations.append(restoreMrWirelessSettings(net=net, dashboard=dashboard, path=path, logger=logger))
     return operations
 
-def restoreMxSettings(net, dashboard, path):
+def restoreMxSettings(net, dashboard, path, logger):
     """
     Restore MX Settings
     :param net: target network
@@ -281,7 +256,7 @@ def restoreMxSettings(net, dashboard, path):
         operation['status']=e
     return operation, data
 
-def restoreMxVlanSettings(net, dashboard, path):
+def restoreMxVlanSettings(net, dashboard, path, logger):
     """
     Restore MX VLAN Settings
     :param net: target network
@@ -305,7 +280,7 @@ def restoreMxVlanSettings(net, dashboard, path):
         operation['status']=e
     return operation, data
 
-def checkFirmware(net, dashboard, path):
+def checkFirmware(net, dashboard, path, logger):
     """
     Function to check if the backup firmware versions match the current firmware versions. Discrepancies in firmware versions
     can cause incompatibilities and make the script fail. Take this into account when restoring and try to back up often.
@@ -319,9 +294,7 @@ def checkFirmware(net, dashboard, path):
         fp.close()
     current_firmware = dashboard.networks.getNetworkFirmwareUpgrades(net['id'])
     prods_in_backup = {product:backup_firmware['products'][product]['currentVersion']['firmware'] for product in backup_firmware['products'].keys()}
-    logger.debug(prods_in_backup)
     prods_in_current = {product:current_firmware['products'][product]['currentVersion']['firmware'] for product in current_firmware['products'].keys()}
-    logger.debug(prods_in_current)
     for key_b in prods_in_backup.keys():
         for key_c in prods_in_current.keys():
             if key_b == key_c:
@@ -334,7 +307,7 @@ def checkFirmware(net, dashboard, path):
                         print("Aborted by user.")
                         sys.exit()
 
-def restoreNetworkGroupPolicies(net, dashboard, path):
+def restoreNetworkGroupPolicies(net, dashboard, path, logger):
     """
     Function to restore a network's group policies.
     :param net: target network
@@ -371,7 +344,7 @@ def restoreNetworkGroupPolicies(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreSwitchPortSchedules(net, dashboard, path):
+def restoreSwitchPortSchedules(net, dashboard, path, logger):
     """
     Function to restore a network's switch port group policies.
     :param net: target network
@@ -408,7 +381,7 @@ def restoreSwitchPortSchedules(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreSwitchQos(net, dashboard, path):
+def restoreSwitchQos(net, dashboard, path, logger):
     """
     Function to restore a network's switch qos policies.
     :param net: target network
@@ -441,7 +414,7 @@ def restoreSwitchQos(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreSwitchOspf(net, dashboard, path):
+def restoreSwitchOspf(net, dashboard, path, logger):
     """
     Function to restore a network's switch OSPF settings.
     :param net: target network
@@ -455,7 +428,6 @@ def restoreSwitchOspf(net, dashboard, path):
             data = json.load(fp)
             fp.close()
         operation['restorePayload']=data
-        logger.debug(data)
         if data['v3']['enabled']==False:
             del data['v3']
         dashboard.switch.updateNetworkSwitchRoutingOspf(networkId=net['id'], **data)
@@ -465,7 +437,7 @@ def restoreSwitchOspf(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreSwitchAccessPolicies(net, dashboard, path):
+def restoreSwitchAccessPolicies(net, dashboard, path, logger):
     """
     Function to restore a network's switch access policies.
     :param net: target network
@@ -588,7 +560,7 @@ def restoreSwitchAccessPolicies(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMxVlansBatch(org, net, dashboard, path):
+def restoreMxVlansBatch(org, net, dashboard, path, logger):
     """
     Function to restore a network's MX VLANs.
     :param net: target network
@@ -644,7 +616,6 @@ def restoreMxVlansBatch(org, net, dashboard, path):
         for device in devices:
             if device['model'] in ['MX64', 'MX64W', 'MX67', 'MX67W', 'MX67C', 'MX100']:
                 starting_port = 2
-                logger.debug(starting_port)
             elif 'MX' in device['model']:
                 starting_port = 3
         model_ports = dashboard.appliance.getNetworkAppliancePorts(networkId=net['id'])
@@ -699,7 +670,7 @@ def restoreMxVlansBatch(org, net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMxSecurity(net, dashboard, path):
+def restoreMxSecurity(net, dashboard, path, logger):
     """
     Function to restore a network's MX AMP and IPS settings
     :param net: target network
@@ -724,7 +695,7 @@ def restoreMxSecurity(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMxFirewall(net, dashboard, path):
+def restoreMxFirewall(net, dashboard, path, logger):
     """
     Function to restore a network's MX L3 and L7 firewall settings
     :param net: target network
@@ -749,7 +720,7 @@ def restoreMxFirewall(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMxContentFiltering(net, dashboard, path):
+def restoreMxContentFiltering(net, dashboard, path, logger):
     """
     Function to restore a network's MX Content Filtering settings
     :param net: target network
@@ -771,7 +742,7 @@ def restoreMxContentFiltering(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMxShaping(net, dashboard, path):
+def restoreMxShaping(net, dashboard, path, logger):
     """
     Function to restore a network's MX Shaping settings
     :param net: target network
@@ -796,7 +767,7 @@ def restoreMxShaping(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMxVpnConfig(net, dashboard, path):
+def restoreMxVpnConfig(net, dashboard, path, logger):
     """
     Function to restore a network's MX VPN settings
     :param net: target network
@@ -819,7 +790,7 @@ def restoreMxVpnConfig(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreSwitchPortConfigsBatch(org, net, dashboard, path, devices_in_network):
+def restoreSwitchPortConfigsBatch(org, net, dashboard, path, devices_in_network, logger):
     """
     Function to restore a network's Switch Port settings
     :param net: target network
@@ -875,7 +846,7 @@ def restoreSwitchPortConfigsBatch(org, net, dashboard, path, devices_in_network)
         operation['status'] = e
     return operation
 
-def restoreNetworkAlerts(net, dashboard, path):
+def restoreNetworkAlerts(net, dashboard, path, logger):
     """
     Function to restore a network's alerts.
     :param net: target network
@@ -895,7 +866,8 @@ def restoreNetworkAlerts(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMrSsidConfigs(net, dashboard, path):
+
+def restoreMrSsidConfigs(net, dashboard, path, logger):
     """
     Function to restore a network's SSIDs
     :param net: target network
@@ -908,6 +880,9 @@ def restoreMrSsidConfigs(net, dashboard, path):
         with open(f'{path}/network/{net["name"]}/wireless/ssid_settings/ssids.json') as fp:
             data = json.load(fp)
             fp.close()
+        current_ssids = dashboard.wireless.getNetworkWirelessSsids(networkId=net['id'])
+        for ssid in current_ssids:
+            print(ssid)
         operation['restorePayload'] = data
         for ssid in data:
             if 'Unconfigured SSID' not in ssid['name']:
@@ -916,8 +891,8 @@ def restoreMrSsidConfigs(net, dashboard, path):
                 del upd['number']
                 ssid_keys = upd.keys()
                 if 'authMode' in ssid_keys:
-                    if ssid['authMode']=='psk':
-                        ssid['psk']=input(f"Please input your desired PSK for SSID {ssid['name']}: ")
+                    #if ssid['authMode']=='psk':
+                    #    ssid['psk']=input(f"Please input your desired PSK for SSID {ssid['name']}: ")
                     if ssid['authMode']=='8021x-radius':
                         if ssid['wpaEncryptionMode']=='WPA3 192-bit Security':
                             ssid['wpaEncryptionMode']='WPA3 only'
@@ -942,7 +917,7 @@ def restoreMrSsidConfigs(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMrRfProfiles(net, dashboard, path, devices_in_network):
+def restoreMrRfProfiles(net, dashboard, path, devices_in_network, logger):
     """
     Function to restore a network's RF Profiles
     :param net: target network
@@ -1038,7 +1013,7 @@ def restoreMrRfProfiles(net, dashboard, path, devices_in_network):
         operation['status'] = e
     return operation
 
-def restoreMrSsidFW(net, dashboard, path):
+def restoreMrSsidFW(net, dashboard, path, logger):
     """
     Function to restore a network's SSID FW
     :param net: target network
@@ -1074,7 +1049,7 @@ def restoreMrSsidFW(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMrSsidShaping(net, dashboard, path):
+def restoreMrSsidShaping(net, dashboard, path, logger):
     """
     Function to restore a network's SSID shaping
     :param net: target network
@@ -1099,7 +1074,7 @@ def restoreMrSsidShaping(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreSwitchSvis(net, dashboard, path, devices_in_network):
+def restoreSwitchSvis(net, dashboard, path, devices_in_network, logger):
     """
     Function to restore a network's Switch SVIs
     :param net: target network
@@ -1185,7 +1160,7 @@ def restoreSwitchSvis(net, dashboard, path, devices_in_network):
         operation['status'] = e
     return operation
 
-def restoreMxStaticRouting(net, dashboard, path):
+def restoreMxStaticRouting(net, dashboard, path, logger):
     """
     Function to restore a network's MX Static Routes
     :param net: target network
@@ -1220,7 +1195,7 @@ def restoreMxStaticRouting(net, dashboard, path):
     return operation
 
 
-def restoreSwitchDhcpSecurity(net, dashboard, path):
+def restoreSwitchDhcpSecurity(net, dashboard, path, logger):
     """
     Function to restore a network's Switch DHCP Security
     :param net: target network
@@ -1241,7 +1216,7 @@ def restoreSwitchDhcpSecurity(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMxSdWanSettings(net, dashboard, path):
+def restoreMxSdWanSettings(net, dashboard, path, logger):
     """
     Function to restore a network's MX VPN settings
     :param net: target network
@@ -1308,7 +1283,7 @@ def restoreMxSdWanSettings(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreNetworkWebhooks(net, dashboard, path):
+def restoreNetworkWebhooks(net, dashboard, path, logger):
     """
     Restore Network Webhooks
     :param net: target network
@@ -1380,7 +1355,7 @@ def restoreNetworkWebhooks(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreNetworkSyslog(net, dashboard, path):
+def restoreNetworkSyslog(net, dashboard, path, logger):
     """
     Restore Network Syslog
     :param net: target network
@@ -1400,7 +1375,7 @@ def restoreNetworkSyslog(net, dashboard, path):
         logger.error(e)
         operation['status'] = e
     return operation
-def restoreNetworkSnmp(net, dashboard, path):
+def restoreNetworkSnmp(net, dashboard, path, logger):
     """
     Restore Network SNMP
     :param net: target network
@@ -1421,7 +1396,7 @@ def restoreNetworkSnmp(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreNetworkFloorplans(net, dashboard, path):
+def restoreNetworkFloorplans(net, dashboard, path, logger):
     """
     Restore Network Floorplans
     :param net: target network
@@ -1429,7 +1404,7 @@ def restoreNetworkFloorplans(net, dashboard, path):
     :param path: Backup location
     :return:
     """
-    operation = {"network": net, "operation_type": "network", "operation": "restoreNetworkDevices",
+    operation = {"network": net, "operation_type": "network", "operation": "restoreNetworkFloorplans",
                  "restorePayload": "", "status": ""}
     try:
         with open(f'{path}/network/{net["name"]}/floorplans/floorplans.json') as fp:
@@ -1456,18 +1431,34 @@ def restoreNetworkFloorplans(net, dashboard, path):
         for fp in update_fp:
             with open(f'{path}/network/{net["name"]}/floorplans/{fp["name"]}.png', 'rb') as fp_file:
                 encoded_string = base64.b64encode(fp_file.read()).decode('utf-8')
+            for cfp in current_floorplans:
+                if cfp['name']==fp['name']:
+                    fp['floorPlanId']=cfp['floorPlanId']
             fp_id = fp['floorPlanId']
             upd = {k: fp[k] for k in fp.keys() - {'floorPlanId', 'devices', 'imageUrl', 'imageMd5', 'imageExtension', 'imageUrlExpiresAt'}}
             upd['imageContents']=encoded_string
             dashboard.networks.updateNetworkFloorPlan(networkId=net['id'], floorPlanId=fp_id, **upd)
 
+        # Floorplan IDs may differ from backup if you had to create any of them during the restore operation
+        # This section makes sure to update the appropriate IDs for reference during Device placement
+        with open(f'{path}/network/{net["name"]}/floorplans/floorplans.json') as fp:
+            original_floorplans_in_backup = json.load(fp)
+            fp.close()
+        final_floorplans = dashboard.networks.getNetworkFloorPlans(networkId=net['id'])
+        for bfp in original_floorplans_in_backup:
+            for ffp in final_floorplans:
+                if bfp['name']==ffp['name']:
+                    bfp['newFloorPlanId']=ffp['floorPlanId']
+        ffp=original_floorplans_in_backup
+
         operation['status'] = "Complete"
     except meraki.APIError as e:
+        ffp=[]
         logger.error(e)
         operation['status'] = e
-    return operation
+    return operation, ffp
 
-def restoreNetworkDevices(net, org, devices_in_network, dashboard, path):
+def restoreNetworkDevices(net, org, devices_in_network, dashboard, path, updated_floorplans, logger):
     """
     Restore Network Device settings
     :param net: target network
@@ -1497,14 +1488,39 @@ def restoreNetworkDevices(net, org, devices_in_network, dashboard, path):
         intersection_set = backup_set.intersection(current_set)
         devices_to_update = [device for device in devices_in_backup if device['serial'] in intersection_set]
         actions = []
-        for device in devices_to_update:
-            action = {
-                "resource": f'/devices/{device["serial"]}',
-                "operation": 'update',
-                "body": {k: device[k] for k in device.keys() - {'serial', 'elevationUncertainty', 'switchProfileId'}}
-            }
-            actions.append(action)
-        operation['restorePayload']=actions
+        # Floorplans IDs may have changed after restoring floorplans, if any floorplans had to be re-created
+        # If the updated_floorplans is not an empty array, make sure to use the newFloorPlanId for updating the device
+        # Otherwise disregard floorPlanId field
+        if updated_floorplans !=[]:
+            for device in devices_to_update:
+                if 'floorPlanId' in device.keys():
+                    for fp in updated_floorplans:
+                        if fp['floorPlanId']==device['floorPlanId']:
+                            device['floorPlanId']=fp['newFloorPlanId']
+                            action = {
+                                "resource": f'/devices/{device["serial"]}',
+                                "operation": 'update',
+                                "body": {k: device[k] for k in device.keys() - {'serial', 'elevationUncertainty', 'switchProfileId'}}
+                            }
+                            actions.append(action)
+                else:
+                    action = {
+                        "resource": f'/devices/{device["serial"]}',
+                        "operation": 'update',
+                        "body": {k: device[k] for k in
+                                 device.keys() - {'serial', 'elevationUncertainty', 'switchProfileId'}}
+                    }
+                    actions.append(action)
+            operation['restorePayload']=actions
+        else:
+            for device in devices_to_update:
+                action = {
+                    "resource": f'/devices/{device["serial"]}',
+                    "operation": 'update',
+                    "body": {k: device[k] for k in device.keys() - {'serial', 'elevationUncertainty', 'switchProfileId', 'floorPlanId'}}
+                }
+                actions.append(action)
+            operation['restorePayload']=actions
         if len(actions)<=100:
             dashboard.organizations.createOrganizationActionBatch(
                 organizationId=org,
@@ -1534,7 +1550,7 @@ def restoreNetworkDevices(net, org, devices_in_network, dashboard, path):
         operation['status'] = e
     return operation, devices_to_update
 
-def restoreSwitchStp(net, dashboard, path):
+def restoreSwitchStp(net, dashboard, path, logger):
     """
     Restore STP Settings
     :param net: target network
@@ -1577,7 +1593,7 @@ def restoreSwitchStp(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreSwitchAcl(net, dashboard, path):
+def restoreSwitchAcl(net, dashboard, path, logger):
     """
     Restore Switch ACL
     :param net: target network
@@ -1600,7 +1616,7 @@ def restoreSwitchAcl(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreOrganizationMxVpnFirewall(org, dashboard, path):
+def restoreOrganizationMxVpnFirewall(org, dashboard, path, logger):
     """
     Restore Organization VPN Firewall
     :param org: target organization
@@ -1623,7 +1639,7 @@ def restoreOrganizationMxVpnFirewall(org, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreOrganizationMxIpsecVpn(org, dashboard, path):
+def restoreOrganizationMxIpsecVpn(org, dashboard, path, logger):
     """
     Restore Organization IPsec VPN
     :param org: target organization
@@ -1649,7 +1665,7 @@ def restoreOrganizationMxIpsecVpn(org, dashboard, path):
     return operation
 
 
-def restoreSwitchSettings(net, dashboard, path):
+def restoreSwitchSettings(net, dashboard, path, logger):
     """
     Restore Switch Network Settings
     :param net: target network
@@ -1672,7 +1688,7 @@ def restoreSwitchSettings(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreSwitchMtu(net, dashboard, path):
+def restoreSwitchMtu(net, dashboard, path, logger):
     """
     Restore Switch MTU
     :param net: target network
@@ -1695,7 +1711,7 @@ def restoreSwitchMtu(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMrWirelessSettings(net, dashboard, path):
+def restoreMrWirelessSettings(net, dashboard, path, logger):
     """
     Restore MR Network Wireless Settings
     :param net: target network
@@ -1717,7 +1733,7 @@ def restoreMrWirelessSettings(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMxBgp(net, dashboard, path):
+def restoreMxBgp(net, dashboard, path, logger):
     """
     Restore MX BGP
     :param net: target network
@@ -1742,7 +1758,7 @@ def restoreMxBgp(net, dashboard, path):
     return operation
 
 
-def restoreSwitchLinkAgg(net, dashboard, path, devices_in_network):
+def restoreSwitchLinkAgg(net, dashboard, path, devices_in_network, logger):
     """
     Restore Switch Link Agg Groups
     This function will:
@@ -1794,7 +1810,7 @@ def restoreSwitchLinkAgg(net, dashboard, path, devices_in_network):
     return operation
 
 
-def restoreOrganizationPolicyObjects(org, dashboard, path):
+def restoreOrganizationPolicyObjects(org, dashboard, path, logger):
     """
     Restore Organization Policy Objects
     :param net: target network
@@ -1878,7 +1894,7 @@ def restoreOrganizationPolicyObjects(org, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreMrBluetooth(net, dashboard, path, devices_in_network):
+def restoreMrBluetooth(net, dashboard, path, devices_in_network, logger):
     """
     Restore MR Bluetooth settings
     :param net: target network
@@ -1901,7 +1917,7 @@ def restoreMrBluetooth(net, dashboard, path, devices_in_network):
     return operation
 
 
-def restoreSwitchStaticRouting(net, dashboard, path, devices_in_network):
+def restoreSwitchStaticRouting(net, dashboard, path, devices_in_network, logger):
     """
     Function to restore a network's Switch Static Routing
     :param net: target network
@@ -1955,7 +1971,7 @@ def restoreSwitchStaticRouting(net, dashboard, path, devices_in_network):
     return operation
 
 
-def restoreSwitchStormControl(net, dashboard, path):
+def restoreSwitchStormControl(net, dashboard, path, logger):
     """
     Restore Switch Storm Control
     :param net: target network
@@ -1977,7 +1993,7 @@ def restoreSwitchStormControl(net, dashboard, path):
         operation['status'] = e
     return operation
 
-def restoreSwitchDscpCosMap(net, dashboard, path):
+def restoreSwitchDscpCosMap(net, dashboard, path, logger):
     """
     Restore Switch DSCP to COS Map
     :param net: target network
@@ -2003,7 +2019,7 @@ def restoreSwitchDscpCosMap(net, dashboard, path):
 
 ### Retired functions
 
-def restoreVlans(net, dashboard, path):
+def restoreVlans(net, dashboard, path, logger):
     """Function for restoring VLAN configs"""
 
     # Open VLAN settings
@@ -2079,7 +2095,6 @@ def restoreVlans(net, dashboard, path):
     for device in devices:
         if device['model'] in ['MX64', 'MX64W', 'MX67', 'MX67W', 'MX67C', 'MX100']:
             starting_port = 2
-            logger.debug(starting_port)
         elif 'MX' in device['model']:
             starting_port = 3
     model_ports = dashboard.appliance.getNetworkAppliancePorts(networkId=net['id'])
