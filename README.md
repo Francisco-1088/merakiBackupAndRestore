@@ -18,6 +18,8 @@ This tool allows creating backups of any networks containing the tag `merakiBack
 
 [Caveats](#caveats)
 
+[Supported Settings](#supported_settings)
+
 <a id="intro"></a>
 
 # Introduction
@@ -64,7 +66,7 @@ Luckily, the Cisco Meraki Dashboard is accompanied by a robust set of REST APIs 
 
 As you run the script, you will be prompted for a few things:
 
-1. As the backup begins, you will have to choose that you want a `Backup my Meraki networks job` by entering the number `1` at the prompt and pressing Enter
+1. As the script begins running, you will have to choose that you want a `Backup my Meraki networks job` by entering the number `1` at the prompt and pressing Enter
 ![image alt text](images/backup_menu1.png)
 2. You will then be prompted with the list of organizations your API key has access to (after filtering for the optional `org_number_filter` or `org_name_filter` as explained in the previous section), and you will have to enter the row number of the organization you wish to work with. For example, for the `Francisco Tello` organization, you should enter `3` as in the image.
 ![image alt text](images/backup_menu2.png)
@@ -83,6 +85,84 @@ As you run the script, you will be prompted for a few things:
 
 ## Restore Operation
 
+As you run the script, you will be prompted for a few things:
+
+1. As the script begins running, you will have to choose that you want a `Restore my Meraki networks job` by entering the number `2` at the prompt and pressing Enter
+![image alt text](images/restore_menu1.png)
+2. You will then be prompted with the list of organizations your API key has access to (after filtering for the optional `org_number_filter` or `org_name_filter` as explained in the previous section), and you will have to enter the row number of the organization you wish to work with. For example, for the `Francisco Tello` organization, you should enter `3` as in the image.
+![image alt text](images/backup_menu2.png)
+3. The script will then list all networks in that organization that have the `merakiRestore` tag that you assigned in step 4 of the previous section, and you'll have to confirm with a `Y` if you want to proceed with those
+![image alt text](images/restore_menu3.png)
+4. You will then be presented with a list of backups in your backup folder that match the selected organization, and you will have to enter the number associated with the backup you want to use
+![image alt text](images/restore_menu4.png)
+5. The script will then check that the selected backup has backups for the networks tagged with `merakiRestore`, and will list those networks for you. If you agree, enter `Y` at the prompt
+6. You may be prompted if there is a firmware mismatch between the backup and target network, stating that incompatibilities may occur when restoring from a previous version of firmware. This can cause the restore operation to fail unexpectedly, so it's a good idea to take backups often. If you're OK with this, select `Y`.
+7. The script will start restoring, and will be displaying log messages every step of the way. Sometimes, it may list errors in the restore operation if there is an incompatibility, or issue encountered with an API call.
+8. When restoring Switch Access Policies, if you're using an external RADIUS server for authentication or accounting, you will be prompted to enter that RADIUS server's secret.
+![image alt text](images/restore_menu5.png)
+9. When restoring Link Aggregation groups, the script will first delete all existing LAGs, and recreate them as specified by the backup file. This can introduce downtime, so enter `N` if you want to skip this tep, or `Y` if you're OK with proceeding.
+![image alt text](images/restore_menu6.png)
+10. When restoring SSIDs, if your SSID uses RADIUS authentication or accounting, you will be prompted for those RADIUS secrets as well.
+![image alt text](images/restore_menu6.png)
+11. As the script finishes execution, it will output a CSV file called `restore_operations.csv` that will list all of the operations performed per network, as well as any errors that happened along the way.
+![image alt text](images/restore_menu7.png)
+
 <a name="caveats"></a>
 
 ## Caveats
+
+1. Restore operations do not account for RMAs and changes in hardware. If a serial number does not exist in the backup, the settings for this device will not be restored. This can cause Link aggregation and STP settings restores to fail.
+2. The restore operation can take a while to complete for a large network, which is why it should be used during a maintenance window to avoid unplanned downtime.
+3. The script only backs up and restore MX, MS and MR settings, as well as some Network and Organization level settings. For a list of supported settings check the Supported Settings section. No support for MV, MT or MG exists today, so those devices will be ignored during a backup or restore.
+4. When a backup is taken, the firmware version of the network is recorded. As this backup is restored, if the target network does not match the backup's firmware, you will be prompted to continue or not. Firmware version changes between backups can introduce new settings in the API that could cause a restore job to fail unexpectedly, so use with care.
+5. Updates to Meraki's API may break this tool until updated, as the required fields in the endpoints may change, so watch out for those as well.
+
+<a name="supported_settings"></a>
+
+## Supported settings
+
+**Organization-level:**
+* Policy Objects (no support for Adaptive Policy objects)
+* IPsec VPN (Non-Meraki)
+* VPN Firewall
+**Network-level:**
+* Webhooks
+* Syslog
+* SNMP
+* Alerts
+* Floorplans
+* Devices
+* Group Policies
+**Appliance (MX):**
+* MX Appliance Network Settings
+* VLAN Settings
+* Static Routing
+* AMP and IPS
+* L3 and L7 Firewall
+* Content Filtering
+* AutoVPN Settings
+* SD-WAN Settings
+* Traffic Shaping settings
+* BGP settings
+**Switch (MS):**
+* Port Schedules
+* QoS
+* Access Policies
+* Port settings (No support for Adaptive Policy)
+* Switch ACL
+* DHCP Security
+* DSCP to CoS Mappings
+* Storm Control
+* MTU
+* Link Aggregations
+* OSPF
+* Static Routing
+* SVIs
+* Switch Network Settings
+**Wireless (MR):**
+* SSID Configs
+* SSID Firewall
+* SSID Shaping
+* RF Profiles
+* Bluetooth Settings
+* Wireless Network Settings
