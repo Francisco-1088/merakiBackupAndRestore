@@ -98,14 +98,15 @@ As you run the script, you will be prompted for a few things:
 5. The script will then check that the selected backup has backups for the networks tagged with `merakiRestore`, and will list those networks for you. If you agree, enter `Y` at the prompt
 6. You may be prompted if there is a firmware mismatch between the backup and target network, stating that incompatibilities may occur when restoring from a previous version of firmware. This can cause the restore operation to fail unexpectedly, so it's a good idea to take backups often. If you're OK with this, select `Y`.
 7. The script will start restoring, and will be displaying log messages every step of the way. Sometimes, it may list errors in the restore operation if there is an incompatibility, or issue encountered with an API call.
+![image alt text](images/radius_example.png)
 8. When restoring Switch Access Policies, if you're using an external RADIUS server for authentication or accounting, you will be prompted to enter that RADIUS server's secret.
-![image alt text](images/restore_menu5.png)
+![image alt text](images/radius_secret.png)
 9. When restoring Link Aggregation groups, the script will first delete all existing LAGs, and recreate them as specified by the backup file. This can introduce downtime, so enter `N` if you want to skip this tep, or `Y` if you're OK with proceeding.
-![image alt text](images/restore_menu6.png)
+![image alt text](images/link_agg.png)
 10. When restoring SSIDs, if your SSID uses RADIUS authentication or accounting, you will be prompted for those RADIUS secrets as well.
-![image alt text](images/restore_menu6.png)
+![image alt text](images/wireless_radius_secret.png)
 11. As the script finishes execution, it will output a CSV file called `restore_operations.csv` that will list all of the operations performed per network, as well as any errors that happened along the way.
-![image alt text](images/restore_menu7.png)
+![image alt text](images/restore_results.png)
 
 <a name="caveats"></a>
 
