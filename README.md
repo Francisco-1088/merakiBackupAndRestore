@@ -2,7 +2,7 @@
 
 This tool allows creating backups of any networks containing the tag `merakiBackup`, and restoring these networks to their backup state by attaching the tag `merakiRestore`.
 
-![image alt text](images/diagram.png)
+![image alt text](images/merakiBackupAndRestore.png)
 
 # Table of Contents
 
