@@ -122,10 +122,13 @@ As you run the script, you will be prompted for a few things:
 ## Supported settings
 
 **Organization-level:**
+
 * Policy Objects (no support for Adaptive Policy objects)
 * IPsec VPN (Non-Meraki)
 * VPN Firewall
+
 **Network-level:**
+
 * Webhooks
 * Syslog
 * SNMP
@@ -133,7 +136,9 @@ As you run the script, you will be prompted for a few things:
 * Floorplans
 * Devices
 * Group Policies
+
 **Appliance (MX):**
+
 * MX Appliance Network Settings
 * VLAN Settings
 * Static Routing
@@ -144,7 +149,9 @@ As you run the script, you will be prompted for a few things:
 * SD-WAN Settings
 * Traffic Shaping settings
 * BGP settings
+
 **Switch (MS):**
+
 * Port Schedules
 * QoS
 * Access Policies
@@ -159,7 +166,9 @@ As you run the script, you will be prompted for a few things:
 * Static Routing
 * SVIs
 * Switch Network Settings
+
 **Wireless (MR):**
+
 * SSID Configs
 * SSID Firewall
 * SSID Shaping
