@@ -6,19 +6,19 @@ This tool allows creating backups of any networks containing the tag `merakiBack
 
 # Table of Contents
 
-[Introduction](#intro)
+* [Introduction](#intro)
 
-[Prerequisites](#prereq)
+* [Prerequisites](#prereq)
 
-[How to use](#howtouse)
+* [How to use](#howtouse)
 
-[Backup Operation](#backup)
+* [Backup Operation](#backup)
 
-[Restore Operation](#restore)
+* [Restore Operation](#restore)
 
-[Caveats](#caveats)
+* [Caveats](#caveats)
 
-[Supported Settings](#supported_settings)
+* [Supported Settings](#supported_settings)
 
 <a id="intro"></a>
 
