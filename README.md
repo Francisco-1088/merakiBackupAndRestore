@@ -56,6 +56,7 @@ Luckily, the Cisco Meraki Dashboard is accompanied by a robust set of REST APIs 
 ![image alt text](images/network_tags.png)
 
 5. Run the script with `python main.py`
+6. Depending on the type of job you want to run, continue in the Backup Operation or Restore Operation sections.
 
 <a name="backup"></a>
 
