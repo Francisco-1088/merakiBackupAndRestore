@@ -61,6 +61,23 @@ Luckily, the Cisco Meraki Dashboard is accompanied by a robust set of REST APIs 
 
 ## Backup Operation
 
+As you run the script, you will be prompted for a few things:
+
+1. As the backup begins, you will have to choose that you want a `Backup my Meraki networks job` by entering the number `1` at the prompt and pressing Enter
+![image alt text](images/backup_menu1.png)
+2. You will then be prompted with the list of organizations your API key has access to (after filtering for the optional `org_number_filter` or `org_name_filter` as explained in the previous section), and you will have to enter the row number of the organization you wish to work with. For example, for the `Francisco Tello` organization, you should enter `3` as in the image.
+![image alt text](images/backup_menu2.png)
+3. The script will then list all networks in that organization that have the `merakiBackup` tag that you assigned in step 4 of the previous section, and you'll have to confirm with a `Y` if you want to proceed with those
+![image alt text](images/backup_menu3.png)
+4. As the script runs, several logs will be displayed to the console detailing which step the script is at, and the result of the API calls being performed. Any API-related errors will be caught and logged to a .csv file. Other types of errors might require some additional troubleshooting.
+![image alt text](images/backup_menu_logs.png)
+5. The backup script will start creating a folder structure for every setting it fetches as in the picture below, and each setting is saved as a .json file in the structure. As a sample, see the sample .json file for VLAN DHCP settings on an MX below.
+![image alt text](images/backup_folder_structure.png)
+![image alt text](images/backup_sample.png)
+**Note**: It's very important that you do not manually modify these folders or files, as they could break future restore operations. Be very careful when changing these.
+6. When the script finishes execution, it will output a CSV file under the backup's top level folder called `backup_operations.csv`, listing every operation performed in every network, and will mark them Complete if they finished successfully, or it will add an error output if not (only for API related errors).
+![image alt text](images/backup_results.png)
+
 <a name="restore"></a>
 
 ## Restore Operation
