@@ -153,6 +153,9 @@ def backupNetworkDevices(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation["status"]=e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupNetworkFloorPlans(net, dir, dashboard, logger):
@@ -189,6 +192,9 @@ def backupNetworkFloorPlans(net, dir, dashboard, logger):
                 logger.error(f'Image for floorplan {floorplan["name"]} couldn\'t be retrieved')
         operation['status']="Complete"
     except meraki.APIError as e:
+        logger.error(e)
+        operation["status"]=e
+    except Exception as e:
         logger.error(e)
         operation["status"]=e
     return operation
@@ -233,6 +239,9 @@ def backupMxVlans(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status']=e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -274,6 +283,9 @@ def backupMxFirewall(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status']=e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -313,6 +325,9 @@ def backupMxSecurity(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMxContentFiltering(net, dir, dashboard, logger):
@@ -352,6 +367,9 @@ def backupMxContentFiltering(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMxShaping(net, dir, dashboard, logger):
@@ -392,6 +410,9 @@ def backupMxShaping(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMxVpnConfig(net, dir, dashboard, logger):
@@ -425,6 +446,9 @@ def backupMxVpnConfig(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return vpn_config, operation
 
 def backupMxWarmSpare(net, dir, dashboard, logger):
@@ -456,6 +480,9 @@ def backupMxWarmSpare(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchQos(net, dir, dashboard, logger):
@@ -488,6 +515,9 @@ def backupSwitchQos(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -521,6 +551,9 @@ def backupSwitchPortSchedules(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchPortConfigs(net, dir, dashboard, logger):
@@ -571,6 +604,9 @@ def backupSwitchPortConfigs(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupNetworkAlerts(net, dir, dashboard, logger):
@@ -601,6 +637,9 @@ def backupNetworkAlerts(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMrSsidConfigs(net, dir, dashboard, logger):
@@ -633,6 +672,9 @@ def backupMrSsidConfigs(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMrRfProfiles(net, dir, dashboard, logger):
@@ -679,6 +721,9 @@ def backupMrRfProfiles(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -722,6 +767,9 @@ def backupMrSsidFW(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -758,6 +806,9 @@ def backupMrSsidShaping(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -805,6 +856,9 @@ def backupSwitchSvis(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -837,6 +891,9 @@ def backupMxStaticRouting(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -869,6 +926,9 @@ def backupSwitchOspf(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -901,6 +961,9 @@ def backupSwitchAccessPolicies(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchStp(net, dir, dashboard, logger):
@@ -932,6 +995,9 @@ def backupSwitchStp(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchAcl(net, dir, dashboard, logger):
@@ -963,6 +1029,9 @@ def backupSwitchAcl(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchDhcpSecurity(net, dir, dashboard, logger):
@@ -994,6 +1063,9 @@ def backupSwitchDhcpSecurity(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMxSdWanSettings(net, dir, dashboard, logger):
@@ -1035,6 +1107,9 @@ def backupMxSdWanSettings(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupNetworkGroupPolicies(net, dir, dashboard, logger):
@@ -1064,6 +1139,9 @@ def backupNetworkGroupPolicies(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupNetworkWebhooks(net, dir, dashboard, logger):
@@ -1096,6 +1174,9 @@ def backupNetworkWebhooks(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -1125,6 +1206,9 @@ def backupNetworkSyslog(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupNetworkSnmp(net, dir, dashboard, logger):
@@ -1153,6 +1237,9 @@ def backupNetworkSnmp(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupNetworkFirmwareVersions(net, dir, dashboard, logger):
@@ -1181,6 +1268,9 @@ def backupNetworkFirmwareVersions(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchStaticRouting(net, dir, dashboard, logger):
@@ -1218,6 +1308,9 @@ def backupSwitchStaticRouting(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchStormControl(net, dir, dashboard, logger):
@@ -1249,6 +1342,9 @@ def backupSwitchStormControl(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupOrganizationPolicyObjects(org, dir, dashboard, logger):
@@ -1280,6 +1376,9 @@ def backupOrganizationPolicyObjects(org, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupOrganizationMxVpnFirewall(org, dir, dashboard, logger):
@@ -1307,6 +1406,9 @@ def backupOrganizationMxVpnFirewall(org, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupOrganizationMxIpsecVpn(org, dir, dashboard, logger):
@@ -1334,6 +1436,9 @@ def backupOrganizationMxIpsecVpn(org, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMxBgp(net, dir, dashboard, logger):
@@ -1365,6 +1470,9 @@ def backupMxBgp(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMxSettings(net, dir, dashboard, logger):
@@ -1397,6 +1505,9 @@ def backupMxSettings(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return settings, operation
 
 def backupSwitchDai(net, dir, dashboard, logger):
@@ -1428,6 +1539,9 @@ def backupSwitchDai(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchDscpCosMap(net, dir, dashboard, logger):
@@ -1460,6 +1574,9 @@ def backupSwitchDscpCosMap(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchLinkAggregations(net, dir, dashboard, logger):
@@ -1492,6 +1609,9 @@ def backupSwitchLinkAggregations(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchMtu(net, dir, dashboard, logger):
@@ -1523,6 +1643,9 @@ def backupSwitchMtu(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchStacks(net, dir, dashboard, logger):
@@ -1555,6 +1678,9 @@ def backupSwitchStacks(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchRoutingMulticast(net, dir, dashboard, logger):
@@ -1590,6 +1716,9 @@ def backupSwitchRoutingMulticast(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMrBluetooth(net, dir, dashboard, logger):
@@ -1635,10 +1764,14 @@ def backupMrBluetooth(net, dir, dashboard, logger):
                                 fp.close()
                         except meraki.APIError as e:
                             logger.error(e)
-        operation['status'] = "Complete"
+                        except Exception as e:
+                            logger.error(e)
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupMrWirelessSettings(net, dir, dashboard, logger):
@@ -1669,6 +1802,9 @@ def backupMrWirelessSettings(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def backupSwitchSettings(net, dir, dashboard, logger):
@@ -1700,4 +1836,7 @@ def backupSwitchSettings(net, dir, dashboard, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
