@@ -254,6 +254,10 @@ def restoreMxSettings(net, dashboard, path, logger):
         logger.error(e)
         data =""
         operation['status']=e
+    except Exception as e:
+        logger.error(e)
+        data=""
+        operation["status"]=e
     return operation, data
 
 def restoreMxVlanSettings(net, dashboard, path, logger):
@@ -278,6 +282,10 @@ def restoreMxVlanSettings(net, dashboard, path, logger):
         logger.error(e)
         data =""
         operation['status']=e
+    except Exception as e:
+        logger.error(e)
+        data=""
+        operation["status"]=e
     return operation, data
 
 def checkFirmware(net, dashboard, path, logger):
@@ -342,6 +350,9 @@ def restoreNetworkGroupPolicies(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreSwitchPortSchedules(net, dashboard, path, logger):
@@ -379,6 +390,9 @@ def restoreSwitchPortSchedules(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreSwitchQos(net, dashboard, path, logger):
@@ -412,6 +426,9 @@ def restoreSwitchQos(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreSwitchOspf(net, dashboard, path, logger):
@@ -435,6 +452,9 @@ def restoreSwitchOspf(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreSwitchAccessPolicies(net, dashboard, path, logger):
@@ -558,6 +578,9 @@ def restoreSwitchAccessPolicies(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMxVlansBatch(org, net, dashboard, path, logger):
@@ -668,6 +691,9 @@ def restoreMxVlansBatch(org, net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMxSecurity(net, dashboard, path, logger):
@@ -693,6 +719,9 @@ def restoreMxSecurity(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMxFirewall(net, dashboard, path, logger):
@@ -718,6 +747,9 @@ def restoreMxFirewall(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMxContentFiltering(net, dashboard, path, logger):
@@ -740,6 +772,9 @@ def restoreMxContentFiltering(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMxShaping(net, dashboard, path, logger):
@@ -765,6 +800,9 @@ def restoreMxShaping(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMxVpnConfig(net, dashboard, path, logger):
@@ -788,6 +826,9 @@ def restoreMxVpnConfig(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreSwitchPortConfigsBatch(org, net, dashboard, path, devices_in_network, logger):
@@ -844,6 +885,9 @@ def restoreSwitchPortConfigsBatch(org, net, dashboard, path, devices_in_network,
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreNetworkAlerts(net, dashboard, path, logger):
@@ -864,6 +908,9 @@ def restoreNetworkAlerts(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -915,6 +962,9 @@ def restoreMrSsidConfigs(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMrRfProfiles(net, dashboard, path, devices_in_network, logger):
@@ -1011,6 +1061,9 @@ def restoreMrRfProfiles(net, dashboard, path, devices_in_network, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMrSsidFW(net, dashboard, path, logger):
@@ -1047,6 +1100,9 @@ def restoreMrSsidFW(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMrSsidShaping(net, dashboard, path, logger):
@@ -1072,6 +1128,9 @@ def restoreMrSsidShaping(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreSwitchSvis(net, dashboard, path, devices_in_network, logger):
@@ -1158,6 +1217,9 @@ def restoreSwitchSvis(net, dashboard, path, devices_in_network, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMxStaticRouting(net, dashboard, path, logger):
@@ -1192,6 +1254,9 @@ def restoreMxStaticRouting(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -1214,6 +1279,9 @@ def restoreSwitchDhcpSecurity(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMxSdWanSettings(net, dashboard, path, logger):
@@ -1281,6 +1349,9 @@ def restoreMxSdWanSettings(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreNetworkWebhooks(net, dashboard, path, logger):
@@ -1353,6 +1424,9 @@ def restoreNetworkWebhooks(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreNetworkSyslog(net, dashboard, path, logger):
@@ -1374,7 +1448,11 @@ def restoreNetworkSyslog(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
+
 def restoreNetworkSnmp(net, dashboard, path, logger):
     """
     Restore Network SNMP
@@ -1394,6 +1472,9 @@ def restoreNetworkSnmp(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreNetworkFloorplans(net, dashboard, path, logger):
@@ -1456,6 +1537,10 @@ def restoreNetworkFloorplans(net, dashboard, path, logger):
         ffp=[]
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        ffp=[]
+        logger.error(e)
+        operation["status"]=e
     return operation, ffp
 
 def restoreNetworkDevices(net, org, devices_in_network, dashboard, path, updated_floorplans, logger):
@@ -1548,6 +1633,9 @@ def restoreNetworkDevices(net, org, devices_in_network, dashboard, path, updated
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation, devices_to_update
 
 def restoreSwitchStp(net, dashboard, path, logger):
@@ -1591,6 +1679,9 @@ def restoreSwitchStp(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreSwitchAcl(net, dashboard, path, logger):
@@ -1614,6 +1705,9 @@ def restoreSwitchAcl(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreOrganizationMxVpnFirewall(org, dashboard, path, logger):
@@ -1637,6 +1731,9 @@ def restoreOrganizationMxVpnFirewall(org, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreOrganizationMxIpsecVpn(org, dashboard, path, logger):
@@ -1662,6 +1759,9 @@ def restoreOrganizationMxIpsecVpn(org, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -1686,6 +1786,9 @@ def restoreSwitchSettings(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreSwitchMtu(net, dashboard, path, logger):
@@ -1709,6 +1812,9 @@ def restoreSwitchMtu(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMrWirelessSettings(net, dashboard, path, logger):
@@ -1731,6 +1837,9 @@ def restoreMrWirelessSettings(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMxBgp(net, dashboard, path, logger):
@@ -1755,6 +1864,9 @@ def restoreMxBgp(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -1807,6 +1919,9 @@ def restoreSwitchLinkAgg(net, dashboard, path, devices_in_network, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -1892,6 +2007,9 @@ def restoreOrganizationPolicyObjects(org, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreMrBluetooth(net, dashboard, path, devices_in_network, logger):
@@ -1914,6 +2032,9 @@ def restoreMrBluetooth(net, dashboard, path, devices_in_network, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -1968,6 +2089,9 @@ def restoreSwitchStaticRouting(net, dashboard, path, devices_in_network, logger)
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
@@ -1991,6 +2115,9 @@ def restoreSwitchStormControl(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 def restoreSwitchDscpCosMap(net, dashboard, path, logger):
@@ -2013,6 +2140,9 @@ def restoreSwitchDscpCosMap(net, dashboard, path, logger):
     except meraki.APIError as e:
         logger.error(e)
         operation['status'] = e
+    except Exception as e:
+        logger.error(e)
+        operation["status"]=e
     return operation
 
 
