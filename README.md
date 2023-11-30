@@ -24,7 +24,7 @@ This tool allows creating backups of any networks containing the tag `merakiBack
 
 # Introduction
 
-The Cisco Meraki Dashboards allows organizations to manage large numbers of IT devices distributed across many locations in a simplified manner, centralizing configurations in one point. However, a direct backup and restore tool from the GUI does not exist today. In many cases, it's easy enough to utilize the Organization Changelog to revert a change you made at some point in the past, but undoing a large set of changes can be a difficult proposition.
+The Cisco Meraki Dashboard allows organizations to manage large numbers of IT devices distributed across many locations in a simplified manner, centralizing configurations in one point. However, a direct backup and restore tool from the GUI does not exist today. In many cases, it's easy enough to utilize the Organization Changelog to revert a change you made at some point in the past, but undoing a large set of changes can be a difficult proposition.
 
 Luckily, the Cisco Meraki Dashboard is accompanied by a robust set of REST APIs that allow the construction of such backup and restore tools, and merakiBackupAndRestore attempts to fill that gap. This tool allows the creation of backups that are stored locally as a collection of directories with JSON files to represent each set of configurations in your Dashboard, and it also allows restoring a given set of networks to a previous backup stored in the source directory.
 
